@@ -441,24 +441,6 @@ export function TabBar<T extends Route>({
       .slice(0, navigationState.index)
       .every((r) => typeof tabWidths[r.key] === 'number');
 
-  React.useEffect(() => {
-    if (isFirst.current) {
-      isFirst.current = false;
-      return;
-    }
-
-    if (isWidthAuto && !hasMeasuredTabWidths) {
-      return;
-    }
-
-    if (scrollEnabled) {
-      flatListRef.current?.scrollToOffset({
-        offset: scrollOffset,
-        animated: true,
-      });
-    }
-  }, [hasMeasuredTabWidths, isWidthAuto, scrollEnabled, scrollOffset]);
-
   const tabBarWidth = getTabBarWidth({
     layoutWidth: layout.width,
     routes,
@@ -471,6 +453,36 @@ export function TabBar<T extends Route>({
   });
 
   const maxScrollDistance = getMaxScrollDistance(tabBarWidth, layout.width);
+
+  React.useEffect(() => {
+    if (isFirst.current) {
+      isFirst.current = false;
+      return;
+    }
+
+    if (isWidthAuto && !hasMeasuredTabWidths) {
+      return;
+    }
+
+    if (scrollEnabled) {
+      flatListRef.current?.scrollToOffset({
+        // Android measures the scroll offset from the opposite side in RTL
+        offset:
+          Platform.OS === 'android' && direction === 'rtl'
+            ? Math.max(maxScrollDistance - scrollOffset, 0)
+            : scrollOffset,
+        animated: true,
+      });
+    }
+  }, [
+    direction,
+    hasMeasuredTabWidths,
+    isWidthAuto,
+    maxScrollDistance,
+    scrollEnabled,
+    scrollOffset,
+  ]);
+
   const scrollAmount = useAnimatedValue(0);
 
   React.useLayoutEffect(() => {
